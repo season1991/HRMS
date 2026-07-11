@@ -30,7 +30,7 @@
 
 ## 3. 项目结构
 
-`
+
 hrms/
 ├── frontend/                  # 前端项目
 │   └── src/
@@ -57,7 +57,7 @@ hrms/
 │   └── requirements.txt
 │
 └── docs/                    # 项目文档
-`
+
 
 ## 4. 开发规范
 
@@ -75,6 +75,59 @@ hrms/
 
 | 阶段 | 产出物 | 存放位置 |
 |------|--------|----------|
-| 需求确认 | 规格文档 | ackend/spec/ |
-| 测试验证 | 测试用例 | ackend/tests/ |
-| 功能实现 | 代码 | ackend/app/ |
+| 需求确认 | 规格文档 | backend/spec/ |
+| 测试验证 | 测试用例 | backend/tests/ |
+| 功能实现 | 代码 | backend/app/ |
+
+### 4.3 代码注释规范
+
+代码中必须包含清晰的中文注释，以确保代码可读性和团队协作效率。
+
+#### 注释要求
+
+| 文件类型 | 注释要求 | 示例 |
+|----------|----------|------|
+| 路由文件 (api/*.py) | 每个接口必须注释功能说明、请求参数、响应格式 | # 获取图形验证码，返回Base64编码的图片 |
+| Service 文件 (services/*.py) | 每个方法必须注释业务逻辑、异常情况 | # 用户登录：验证验证码->验证用户->验证密码->生成Token |
+| CRUD 文件 (crud/*.py) | 每个方法必须注释数据库操作 | # 根据用户名查询用户，支持大小写不敏感 |
+| Model 文件 (models/*.py) | 每个字段必须注释含义和约束 | # status: 状态 0-禁用 1-启用 |
+| Schema 文件 (schemas/*.py) | 每个字段必须注释用途和校验规则 | # username: 登录用户名，长度1-50位 |
+| 工具文件 (core/*.py) | 每个方法必须注释功能和使用场景 | # 生成JWT访问令牌，默认2小时有效期 |
+
+#### 注释风格
+
+`python
+# 模块文件顶部必须包含模块说明
+"""认证模块 - 提供用户登录、登出、Token管理等功能"""
+
+# 类定义必须包含类说明
+class SysUser(Base):
+    """系统用户表模型"""
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)  # 主键，自增
+    username: Mapped[str] = mapped_column(String(50))  # 用户名，唯一索引
+
+# 方法定义必须包含方法说明和参数说明
+def login(db: Session, username: str, password: str) -> LoginResponse:
+    \"\"\"
+    用户登录
+    
+    参数:
+        db: 数据库会话
+        username: 用户名
+        password: 密码（已加密存储）
+    
+    返回:
+        LoginResponse: 包含Token和用户信息的响应对象
+    
+    异常:
+        InvalidCredentialsError: 用户名或密码错误
+        UserLockedError: 账号已被锁定
+    \"\"\"
+`
+
+#### 注释禁止事项
+
+- 禁止使用纯英文注释（除变量名、库函数名外）
+- 禁止注释与代码功能不符的内容
+- 禁止留下无意义的占位注释（如 # TODO、# xxx）
+- 注释应简洁明了，避免冗长描述
