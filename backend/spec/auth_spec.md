@@ -127,7 +127,7 @@
 2. 使用 bcrypt 进行密码加密
 3. 使用 python-jose 处理 JWT
 4. Refresh Token 黑名单存储在 Redis（若无Redis则用数据库表代替）
-5. 系统初始化时自动创建默认管理员账号（admin / admin123）
+5. 系统初始化时自动创建默认管理员账号（admin / admin）
 6. 统一响应格式：{"code": 200, "message": "success", "data": null}
 7. 使用 SQLAlchemy 2.0 语法
 8. 数据库使用 MySQL 8.0

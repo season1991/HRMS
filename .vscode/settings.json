@@ -1,0 +1,6 @@
+﻿{
+    "python.defaultInterpreterPath": "D:\\anaconda3\\envs\\trae_env\\python.exe",
+    "python.envsBasePath": "D:\\anaconda3\\envs",
+    "python-envs.defaultEnvManager": "ms-python.python:conda",
+    "python-envs.defaultPackageManager": "ms-python.python:conda"
+}
