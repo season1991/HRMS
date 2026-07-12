@@ -51,15 +51,15 @@
 
 ## Phase 4 · TC01 → GREEN（验证码接口）
 
-- [ ] TC01 维持 **RED**：跑测试，确认 `GET /api/auth/captcha` 用例失败
-- [ ] `backend/app/models/sys_captcha.py`：`SysCaptcha` 表 + `captcha_id` 唯一索引
-- [ ] `backend/app/models/__init__.py`：导出 `SysCaptcha` 让 Base 发现
-- [ ] `backend/app/schemas/auth.py`：`CaptchaOut` Pydantic 模型
-- [ ] `backend/app/crud/auth.py`：`create_captcha`、`get_captcha_by_id`
-- [ ] `backend/app/services/auth.py`：`generate_captcha(db)` —— captcha 库生成图片 + Base64 + 持久化
-- [ ] `backend/app/api/auth.py`：`GET /api/auth/captcha` 路由 + 统一响应
-- [ ] TC01 转为 **GREEN**：仅 TC01 通过，其余 17 个仍 RED
-- [ ] 提交（如用户授权）
+- [✔] TC01 维持 **RED**：跑测试，确认 `GET /api/auth/captcha` 用例失败
+- [✔] `backend/app/models/sys_captcha.py`：`SysCaptcha` 表 + `captcha_id` 唯一索引
+- [✔] `backend/app/models/__init__.py`：导出 `SysCaptcha` 让 Base 发现
+- [✔] `backend/app/schemas/auth.py`：`CaptchaOut` Pydantic 模型
+- [✔] `backend/app/crud/auth.py`：`create_captcha`、`get_captcha_by_id`
+- [✔] `backend/app/services/auth.py`：`generate_captcha(db)` —— captcha 库生成图片 + Base64 + 持久化
+- [✔] `backend/app/api/auth.py`：`GET /api/auth/captcha` 路由 + 统一响应
+- [✔] TC01 转为 **GREEN**：仅 TC01 通过，其余 17 个仍 RED
+- [✔ ] 提交（如用户授权）
 
 ## Phase 5 · TC02 → GREEN（验证码过期）
 

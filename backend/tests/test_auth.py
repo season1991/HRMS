@@ -13,6 +13,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.core.database import Base, get_db
+from app.core.redis_client import get_redis
 from app.core.security import get_password_hash
 from app.main import create_app
 from app.models import SysUser  # noqa: F401
@@ -43,15 +44,25 @@ def session_factory(engine):
 
 
 @pytest.fixture()
-def client(session_factory, engine):
+def redis_client():
+    """每个用例独立的 fakeredis 客户端（无需真实 Redis 服务）"""
+    import fakeredis
+    return fakeredis.FakeRedis(decode_responses=True)
+
+
+@pytest.fixture()
+def client(session_factory, engine, redis_client):
     def _override_get_db():
         db = session_factory()
         try:
             yield db
         finally:
             db.close()
+    def _override_get_redis():
+        yield redis_client
     app = create_app()
     app.dependency_overrides[get_db] = _override_get_db
+    app.dependency_overrides[get_redis] = _override_get_redis
     with TestClient(app) as c:
         yield c
 
@@ -101,14 +112,11 @@ def test_TC01_captcha_returns_id_and_base64_image(client):
 
 
 # TC02
-def test_TC02_captcha_expired_cannot_be_used(client, admin_user):
+def test_TC02_captcha_expired_cannot_be_used(client, admin_user, redis_client):
     """TC02 验证码过期后无法使用"""
     captcha_id, captcha_code, _ = _fetch_captcha(client)
     from app.crud.auth import delete_captcha_by_id
-    from app.core.database import SessionLocal
-    with SessionLocal() as db:
-        delete_captcha_by_id(db, captcha_id)
-        db.commit()
+    delete_captcha_by_id(redis_client, captcha_id)
     r = _post_login(client, admin_user["username"], admin_user["password"], captcha_code, captcha_id)
     assert r.status_code == 400
     assert r.json()["code"] == 400

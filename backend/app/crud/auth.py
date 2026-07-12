@@ -1,14 +1,39 @@
-"""认证相关数据库操作（最小骨架）
+"""认证相关 Redis 操作
 
-Phase 3 仅提供：
-- delete_captcha_by_id：测试 TC02 直接调用
+Phase 4 仅提供：
+- create_captcha / get_captcha_by_id / delete_captcha_by_id：图形验证码 CRUD（Redis）
 
-其他 CRUD 函数（用户 CRUD、验证码 CRUD、黑名单 CRUD 等）在后续 Phase 按规格补齐。
+存储结构：
+- Key:   {REDIS_CAPTCHA_KEY_PREFIX}{captcha_id}
+- Value: captcha_code（大写）
+- TTL:   CAPTCHA_EXPIRE_MINUTES 分钟（由调用方在 set 时指定）
 """
 
-from sqlalchemy.orm import Session
+from typing import Optional
+
+from redis import Redis
+
+from app.core.config import settings
 
 
-def delete_captcha_by_id(db: Session, captcha_id: str) -> int:
-    """占位：返回 0，不做实际删除（真实实现在后续 Phase）"""
-    return 0
+def _key(captcha_id: str) -> str:
+    """构造 Redis 键"""
+    return f"{settings.REDIS_CAPTCHA_KEY_PREFIX}{captcha_id}"
+
+
+def create_captcha(redis: Redis, captcha_id: str, captcha_code: str, expire_seconds: int) -> None:
+    """写入验证码：SETEX key ttl value
+
+    expire_seconds 由调用方从 settings.CAPTCHA_EXPIRE_MINUTES * 60 计算得到。
+    """
+    redis.setex(_key(captcha_id), expire_seconds, captcha_code.upper())
+
+
+def get_captcha_by_id(redis: Redis, captcha_id: str) -> Optional[str]:
+    """根据 captcha_id 查询验证码答案；不存在或已过期返回 None"""
+    return redis.get(_key(captcha_id))
+
+
+def delete_captcha_by_id(redis: Redis, captcha_id: str) -> int:
+    """根据 captcha_id 删除（验证码一次性消费）；返回删除条数"""
+    return int(redis.delete(_key(captcha_id)))

@@ -13,19 +13,19 @@
 | backend/app/core/config.py | 配置加载（pydantic-settings + YAML 自定义源） |
 | backend/app/core/security.py | 安全工具 |
 | backend/app/core/database.py | 数据库连接 |
+| backend/app/core/redis_client.py | Redis 客户端与依赖注入 |
 | backend/app/models/sys_user.py | 用户表模型 |
-| backend/app/models/sys_captcha.py | 验证码表模型 |
 | backend/app/schemas/auth.py | 认证数据模型 |
 | backend/app/schemas/response.py | 统一响应格式 |
-| backend/app/crud/auth.py | 用户认证CRUD |
+| backend/app/crud/auth.py | 用户认证 CRUD（Redis captcha + DB user） |
 | backend/app/services/auth.py | 登录业务逻辑 |
 | backend/app/api/auth.py | 认证接口 |
 | backend/app/main.py | 应用入口 |
 | backend/config/dev.yaml | 开发环境配置（默认 APP_ENV） |
 | backend/config/uat.yaml | UAT 环境配置 |
 | backend/config/prod.yaml | 生产环境配置 |
-| backend/.env | 运行时环境变量（APP_ENV 等） |
-| backend/tests/test_auth.py | 测试用例 |
+| backend/.env | 运行时环境变量（APP_ENV / REDIS_URL 等） |
+| backend/tests/test_auth.py | 测试用例（fakeredis 替代真 Redis） |
 | backend/requirements.txt | 依赖 |
 
 ### 新增数据库表
@@ -33,7 +33,12 @@
 | 表名 | 说明 |
 |------|------|
 | sys_user | 用户表 |
-| sys_captcha | 验证码表 |
+
+### Redis 存储
+
+| Key 模式 | Value | TTL | 用途 |
+|----------|-------|-----|------|
+| `captcha:{captcha_id}` | 验证码答案（大写） | 5 分钟 | 图形验证码一次性消费 |
 
 
 ## Configuration
@@ -114,13 +119,7 @@
 
 ### sys_captcha 验证码表
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | Integer | 主键，自增 |
-| captcha_id | String(50) | 验证码ID，唯一 |
-| captcha_code | String(10) | 验证码答案 |
-| expired_at | DateTime | 过期时间 |
-| create_time | DateTime | 创建时间 |
+> ⚠️ **已废弃**：图形验证码改用 Redis 存储（Key: `captcha:{captcha_id}`，TTL 5 分钟），不再使用数据库表。
 
 
 ## Test Plan
@@ -148,10 +147,10 @@
 
 ## Assumptions
 
-1. 使用 captcha 库生成图形验证码
+1. 使用 captcha 库生成图形验证码，存储在 Redis（Key: `captcha:{captcha_id}`，TTL 5 分钟）
 2. 使用 bcrypt 进行密码加密
 3. 使用 python-jose 处理 JWT
-4. Refresh Token 黑名单存储在 Redis（若无Redis则用数据库表代替）
+4. Refresh Token 黑名单存储在 Redis
 5. 统一响应格式：{"code": 200, "message": "success", "data": null}
 6. 使用 SQLAlchemy 2.0 语法
 7. 数据库使用 MySQL 8.0

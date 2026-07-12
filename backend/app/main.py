@@ -12,6 +12,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 
+from app.api.auth import router as auth_router
 from app.core.config import settings
 from app.core.database import Base, SessionLocal, engine
 from app.core.response import json_fail
@@ -45,6 +46,9 @@ def create_app() -> FastAPI:
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(request: Request, exc: Exception):
         return json_fail(message=f"服务器内部错误: {exc}", code=500)
+
+    # 注册路由
+    app.include_router(auth_router)
 
     return app
 

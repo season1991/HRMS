@@ -100,6 +100,10 @@ class Settings(BaseSettings):
     LOCK_MINUTES: int
     CAPTCHA_EXPIRE_MINUTES: int
 
+    # Redis（存储 captcha、token 黑名单等短期数据）
+    REDIS_URL: str
+    REDIS_CAPTCHA_KEY_PREFIX: str = "captcha:"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

@@ -1,4 +1,4 @@
-﻿{
+{
     "version": "0.2.0",
     "configurations": [
         {
@@ -24,12 +24,12 @@
             "python": "d:\\anaconda3\\envs\\dev_env\\python.exe"
         },
         {
-            "name": "Pytest: test_tc01_get_captcha_success",
+            "name": "Pytest: test_TC01_captcha_returns_id_and_base64_image",
             "type": "python",
             "request": "launch",
             "module": "pytest",
             "args": [
-                "tests/test_auth.py::TestCaptchaAPI::test_tc01_get_captcha_success",
+                "tests/test_auth.py::test_TC01_captcha_returns_id_and_base64_image",
                 "-v",
                 "-s"
             ],
