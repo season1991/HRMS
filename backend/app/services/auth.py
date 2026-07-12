@@ -1,8 +1,8 @@
 """登录业务编排层
 
-Phase 5：
+Phase 6 范围：
 - generate_captcha：生成图形验证码 + Base64 + 写入 Redis
-- login：仅校验 captcha（一次性消费），Phase 6+ 补全用户/密码/JWT
+- login：完整登录流程（captcha → 用户 → 锁定 → 状态 → 密码 → 重置 → 双 Token）
 
 后续 Phase 按 TC 补齐 logout / refresh / me。
 """
@@ -10,10 +10,13 @@ Phase 5：
 import io
 import uuid
 from base64 import b64encode
+from datetime import datetime, timedelta, timezone
 
 from captcha.image import ImageCaptcha
 from redis import Redis
+from sqlalchemy.orm import Session
 
+from app.core import security
 from app.core.config import settings
 from app.crud import auth as crud_auth
 
@@ -44,7 +47,45 @@ class CaptchaMismatchError(AuthError):
         super().__init__(message, code=400)
 
 
+class InvalidCredentialsError(AuthError):
+    """用户名或密码错误"""
+
+    def __init__(self, message: str = "用户名或密码错误"):
+        super().__init__(message, code=401)
+
+
+class UserDisabledError(AuthError):
+    """账号被禁用"""
+
+    def __init__(self, message: str = "账号已被禁用，请联系管理员"):
+        super().__init__(message, code=403)
+
+
+class UserLockedError(AuthError):
+    """账号被锁定"""
+
+    def __init__(self, message: str = "账号已被锁定，请稍后再试"):
+        super().__init__(message, code=403)
+
+
 # ============================= 工具 =============================
+
+
+def _now() -> datetime:
+    """带时区的当前时间"""
+    return datetime.now(timezone.utc)
+
+
+def _now_naive() -> datetime:
+    """naive UTC 时间（与 SQLAlchemy 返回的 naive 时间统一比较）"""
+    return datetime.utcnow()
+
+
+def _strip_tz(dt: datetime) -> datetime:
+    """将带时区时间转换为 naive UTC"""
+    if dt.tzinfo is not None:
+        return dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt
 
 
 def _gen_captcha_image(text: str) -> str:
@@ -65,12 +106,6 @@ def generate_captcha(redis: Redis) -> dict:
 
     返回:
         dict: 包含 captcha_id / captcha_code / captcha_image
-
-    业务规则：
-        - 4 位字符（去易混字符 0/o/1/l/i）
-        - 有效期 CAPTCHA_EXPIRE_MINUTES（默认 5 分钟），由 Redis SETEX 自动过期
-        - captcha_code 写入 Redis；captcha_image 返回前端
-        - 测试环境 captcha_code 直接随响应返回（便于自动化），生产应仅存后端
     """
     import random
 
@@ -93,30 +128,79 @@ def generate_captcha(redis: Redis) -> dict:
     }
 
 
-def login(redis: Redis, captcha_id: str, captcha_code: str) -> dict:
-    """登录业务（Phase 5 骨架：仅校验 captcha，后续 Phase 补全用户/密码/JWT）
+def login(
+    db: Session,
+    redis: Redis,
+    username: str,
+    password: str,
+    captcha_id: str,
+    captcha_code: str,
+    login_ip: str | None = None,
+) -> dict:
+    """完整登录流程
 
-    流程：
-        1. 查询 Redis 中 captcha_id 是否存在
-        2. 不存在 → CaptchaInvalidError（400）
-        3. 答案不一致 → CaptchaMismatchError（400）
-        4. 一次性消费：校验通过后从 Redis 删除
-
-    返回:
-        dict: Phase 5 占位返回，Phase 6+ 替换为 LoginOut
+    步骤：
+        1. 验证码校验（存在 + 答案正确，一次性消费）
+        2. 用户名校验（不存在 → 401）
+        3. 锁定状态校验（locked_until 未过期 → 403）
+        4. 账号状态校验（status != 1 → 403）
+        5. 密码校验（错误则累计 error_count，达 MAX_LOGIN_ERROR_COUNT 则锁定 LOCK_MINUTES 分钟）
+        6. 登录成功：重置错误计数 + 更新登录信息
+        7. 生成 access / refresh 双 Token
     """
+    # 1. 验证码校验
     stored_code = crud_auth.get_captcha_by_id(redis, captcha_id)
     if stored_code is None:
         raise CaptchaInvalidError()
     if stored_code.upper() != captcha_code.upper():
         raise CaptchaMismatchError()
-
-    # 校验通过：消费 captcha
     crud_auth.delete_captcha_by_id(redis, captcha_id)
 
-    # Phase 5 占位：captcha 校验通过，Phase 6+ 继续校验用户/密码并签发 Token
+    # 2. 用户查询
+    user = crud_auth.get_user_by_username(db, username)
+    if user is None:
+        raise InvalidCredentialsError()
+
+    # 3. 锁定检查
+    if user.locked_until is not None and _strip_tz(user.locked_until) > _now_naive():
+        raise UserLockedError()
+
+    # 4. 状态检查
+    if user.status != 1:
+        raise UserDisabledError()
+
+    # 5. 密码校验
+    if not security.verify_password(password, user.password):
+        crud_auth.increment_error_count(db, user)
+        db.refresh(user)
+        if user.error_count >= settings.MAX_LOGIN_ERROR_COUNT:
+            lock_until = _now_naive() + timedelta(minutes=settings.LOCK_MINUTES)
+            crud_auth.lock_user_until(db, user, lock_until)
+            raise UserLockedError(
+                f"连续输错 {settings.MAX_LOGIN_ERROR_COUNT} 次，账号已被锁定 {settings.LOCK_MINUTES} 分钟"
+            )
+        raise InvalidCredentialsError()
+
+    # 6. 登录成功：重置 + 更新登录信息
+    crud_auth.reset_login_state(db, user, login_time=_now_naive(), login_ip=login_ip)
+
+    # 7. 生成双 Token
+    access_jti = uuid.uuid4().hex
+    refresh_jti = uuid.uuid4().hex
+    access_token = security.create_access_token(user.id, access_jti)
+    refresh_token = security.create_refresh_token(user.id, refresh_jti)
+
     return {
-        "phase": "5-stub",
-        "captcha_verified": True,
-        "captcha_id": captcha_id,
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "nickname": user.nickname,
+            "role_id": user.role_id,
+            "status": user.status,
+            "login_time": user.login_time,
+            "login_ip": user.login_ip,
+        },
     }

@@ -1,8 +1,11 @@
 """认证模块 Pydantic 模型（请求 / 响应数据契约）
 
-Phase 5：CaptchaOut + LoginIn
-后续 Phase 按 TC 补齐 LoginOut / RefreshIn / RefreshOut / UserOut / LogoutOut
+Phase 6：CaptchaOut / LoginIn / UserOut / LoginOut
+后续 Phase 按需补齐 RefreshIn / RefreshOut / LogoutOut
 """
+
+from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -22,3 +25,24 @@ class LoginIn(BaseModel):
     password: str = Field(..., min_length=1, max_length=128, description="登录密码")
     captcha_id: str = Field(..., description="图形验证码ID")
     captcha_code: str = Field(..., min_length=1, max_length=10, description="图形验证码答案")
+
+
+class UserOut(BaseModel):
+    """用户信息"""
+
+    id: int
+    username: str
+    nickname: Optional[str] = None
+    role_id: int
+    status: int
+    login_time: Optional[datetime] = None
+    login_ip: Optional[str] = None
+
+
+class LoginOut(BaseModel):
+    """登录成功响应"""
+
+    access_token: str = Field(..., description="访问令牌，2 小时有效")
+    refresh_token: str = Field(..., description="刷新令牌，7 天有效")
+    token_type: str = Field(default="bearer", description="Token 类型")
+    user: UserOut = Field(..., description="当前登录用户信息")
