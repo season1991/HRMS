@@ -5,36 +5,36 @@
 
 ## Phase 1 · 环境与基础设施
 
-- [ ] 创建 `backend/` 目录结构（app/{core,models,schemas,crud,services,api}、tests）
-- [ ] 编写 `backend/requirements.txt`（fastapi、uvicorn、sqlalchemy、pymysql、pydantic、python-jose、passlib[bcrypt]、captcha、pytest、httpx）
-- [ ] 激活 `dev_env` 并安装依赖
-- [ ] 验证 `pytest --collect-only` 可正常收集（即使无用例）
+- [✔] 创建 `backend/` 目录结构（app/{core,models,schemas,crud,services,api}、tests）
+- [✔] 编写 `backend/requirements.txt`（fastapi、uvicorn、sqlalchemy、pymysql、pydantic、python-jose、passlib[bcrypt]、captcha、pytest、httpx）
+- [✔] 激活 `dev_env` 并安装依赖
+- [✔] 验证 `pytest --collect-only` 可正常收集（即使无用例）
 
 ## Phase 2 · 测试驱动 —— 全红 (backend/tests)
 
 > 严格 TDD：根据规格先写全部测试，运行后必须全部 **FAIL**
 
-- [ ] `test_auth.py`：编写以下用例，每个用例独立运行
-- [ ] 用例清单（全部须为 **RED**）
-  - [ ] TC01 获取验证码接口正常返回
-  - [ ] TC02 验证码过期后无法使用
-  - [ ] TC10 正常登录成功
-  - [ ] TC11 用户名不存在返回 401
-  - [ ] TC12 密码错误返回 401
-  - [ ] TC13 验证码错误返回 400
-  - [ ] TC14 验证码过期返回 400
-  - [ ] TC15 禁用账号登录返回 403
-  - [ ] TC16 锁定账号登录返回 403
-  - [ ] TC17 锁定结束后可正常登录
-  - [ ] TC18 登录成功后错误次数重置
-  - [ ] TC20 有效 Token 登出成功
-  - [ ] TC21 无效 Token 登出返回 401
-  - [ ] TC30 有效 RefreshToken 刷新成功
-  - [ ] TC31 已使用的 RefreshToken 返回 401
-  - [ ] TC32 过期的 RefreshToken 返回 401
-  - [ ] TC40 有效 Token 获取用户信息成功
-  - [ ] TC41 无效 Token 获取用户信息返回 401
-- [ ] 运行 `pytest backend/tests -v`，确认全部用例为 **RED**（连接失败/导入失败/断言失败均可）
+- [✔] `test_auth.py`：编写以下用例，每个用例独立运行
+- [✔] 用例清单（全部须为 **RED**）
+  - [✔] TC01 获取验证码接口正常返回
+  - [✔] TC02 验证码过期后无法使用
+  - [✔] TC10 正常登录成功
+  - [✔] TC11 用户名不存在返回 401
+  - [✔] TC12 密码错误返回 401
+  - [✔] TC13 验证码错误返回 400
+  - [✔] TC14 验证码过期返回 400
+  - [✔] TC15 禁用账号登录返回 403
+  - [✔] TC16 锁定账号登录返回 403
+  - [✔] TC17 锁定结束后可正常登录
+  - [✔] TC18 登录成功后错误次数重置
+  - [✔] TC20 有效 Token 登出成功
+  - [✔] TC21 无效 Token 登出返回 401
+  - [✔] TC30 有效 RefreshToken 刷新成功
+  - [✔] TC31 已使用的 RefreshToken 返回 401
+  - [✔] TC32 过期的 RefreshToken 返回 401
+  - [✔] TC40 有效 Token 获取用户信息成功
+  - [✔] TC41 无效 Token 获取用户信息返回 401
+- [✔] 运行 `pytest backend/tests -v`，确认全部用例为 **RED**（连接失败/导入失败/断言失败均可）
 
 ## Phase 3 · 最小可运行骨架（让测试可 RUN）
 
