@@ -311,3 +311,39 @@ def refresh_tokens(db: Session, redis: Redis, refresh_token: str) -> dict:
         "refresh_token": security.create_refresh_token(user_id, new_refresh_jti),
         "token_type": "bearer",
     }
+
+
+def get_current_user(db: Session, redis: Redis, token: str) -> dict:
+    """从 access token 中解析当前用户
+
+    流程：
+        1. 解码 access token（校验签名 + 类型 + 未过期）
+        2. 黑名单检查：jti 已被吊销 → TokenRevokedError(401)
+        3. 查询用户；不存在或被禁用 → TokenInvalidError(401)
+        4. 返回 UserOut 字典
+    """
+    try:
+        payload = security.decode_jwt(token, expected_type="access")
+    except ExpiredSignatureError as e:
+        raise TokenInvalidError("Token 已过期") from e
+    except JWTError as e:
+        raise TokenInvalidError("Token 无效") from e
+
+    jti = payload.get("jti")
+    if jti and crud_auth.is_jti_blacklisted(redis, jti):
+        raise TokenRevokedError("Token 已失效")
+
+    user_id = int(payload.get("sub", 0))
+    user = crud_auth.get_user_by_id(db, user_id)
+    if user is None or user.status != 1:
+        raise TokenInvalidError("用户不存在或已被禁用")
+
+    return {
+        "id": user.id,
+        "username": user.username,
+        "nickname": user.nickname,
+        "role_id": user.role_id,
+        "status": user.status,
+        "login_time": user.login_time,
+        "login_ip": user.login_ip,
+    }

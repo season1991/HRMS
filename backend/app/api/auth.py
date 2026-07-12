@@ -1,12 +1,11 @@
 """认证接口路由
 
-Phase 9：
+Phase 10：所有 5 个 auth 路由完成
 - GET  /api/auth/captcha
 - POST /api/auth/login
 - POST /api/auth/logout
 - POST /api/auth/refresh
-
-剩余 1 个路由在后续 Phase 按 TC 补齐。
+- GET  /api/auth/me
 """
 
 from fastapi import APIRouter, Depends, Header, Request
@@ -16,7 +15,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.redis_client import get_redis
 from app.core.response import json_fail, success
-from app.schemas.auth import CaptchaOut, LoginIn, LoginOut, RefreshIn, RefreshOut
+from app.schemas.auth import CaptchaOut, LoginIn, LoginOut, RefreshIn, RefreshOut, UserOut
 from app.services import auth as auth_service
 from app.services.auth import AuthError
 
@@ -103,5 +102,20 @@ def refresh(
             db=db, redis=redis, refresh_token=payload.refresh_token
         )
         return success(RefreshOut(**data).model_dump())
+    except AuthError as e:
+        return json_fail(message=e.message, code=e.code)
+
+
+@router.get("/me", summary="获取当前登录用户信息")
+def me(
+    authorization: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+    redis: Redis = Depends(get_redis),
+):
+    """从 Authorization 头解析 access token，返回当前用户信息"""
+    try:
+        token = _bearer_token(authorization)
+        user_dict = auth_service.get_current_user(db=db, redis=redis, token=token)
+        return success(UserOut(**user_dict).model_dump())
     except AuthError as e:
         return json_fail(message=e.message, code=e.code)

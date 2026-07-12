@@ -148,17 +148,18 @@
 
 ## Phase 10 · TC40~TC41 → GREEN（当前用户）
 
-- [ ] TC40 维持 **RED**
-- [ ] `backend/app/services/auth.py`：`get_current_user(db, token)` —— 解码 access → 黑名单校验 → 查询用户
-- [ ] `backend/app/api/auth.py`：`GET /api/auth/me` 路由
-- [ ] TC40 → GREEN
-- [ ] TC41 维持 **RED**：解码失败 → 401
-- [ ] TC41 → GREEN
-- [ ] 跑全套测试，确认 18 个用例全部 **GREEN**
+- [✔] TC40 维持 **RED**
+- [✔] `backend/app/services/auth.py`：`get_current_user(db, redis, token)` —— 解码 access → 黑名单校验 → 查询用户 → 用户状态校验
+- [✔] `backend/app/api/auth.py`：`GET /api/auth/me` 路由
+- [✔] TC40 → GREEN
+- [✔] TC41 维持 **RED**
+- [✔] 解码失败抛 `TokenInvalidError(401)`，已覆盖
+- [✔] TC41 → GREEN
+- [✔] 跑全套测试：**18 passed in 4.97s** ✅
 
 ## Phase 11 · 全量回归 & 契约输出
 
-- [ ] 跑 `pytest backend/tests -v`，确认 18/18 通过
+- [✔] 跑 `pytest backend/tests -v`，确认 18/18 通过
 - [ ] 启动 `uvicorn app.main:app`，访问 `/docs` 验证 Swagger UI 正常
 - [ ] 导出 `backend/spec/openapi_auth.json` 供前端消费
 
