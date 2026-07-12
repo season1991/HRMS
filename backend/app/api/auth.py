@@ -1,13 +1,14 @@
 """认证接口路由
 
-Phase 6：
+Phase 8：
 - GET  /api/auth/captcha
-- POST /api/auth/login（完整登录：captcha + user + password + JWT）
+- POST /api/auth/login
+- POST /api/auth/logout
 
-其他 3 个路由在后续 Phase 按 TC 补齐。
+其他 2 个路由在后续 Phase 按 TC 补齐。
 """
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Header, Request
 from redis import Redis
 from sqlalchemy.orm import Session
 
@@ -29,6 +30,20 @@ def _client_ip(request: Request) -> str | None:
     if request.client:
         return request.client.host
     return None
+
+
+def _bearer_token(authorization: str | None) -> str:
+    """从 Authorization 头中提取 Bearer Token
+
+    异常:
+        AuthError(401): 未提供或格式错误
+    """
+    if not authorization:
+        raise AuthError("未提供 Authorization 头", code=401)
+    parts = authorization.split()
+    if len(parts) != 2 or parts[0].lower() != "bearer":
+        raise AuthError("Authorization 头格式错误", code=401)
+    return parts[1]
 
 
 @router.get("/captcha", summary="获取图形验证码")
@@ -57,5 +72,19 @@ def login(
             login_ip=_client_ip(request),
         )
         return success(LoginOut(**data).model_dump())
+    except AuthError as e:
+        return json_fail(message=e.message, code=e.code)
+
+
+@router.post("/logout", summary="用户登出")
+def logout(
+    authorization: str | None = Header(default=None),
+    redis: Redis = Depends(get_redis),
+):
+    """将当前 access token 的 jti 加入 Redis 黑名单（TTL = 剩余有效时间）"""
+    try:
+        token = _bearer_token(authorization)
+        auth_service.logout(redis=redis, token=token)
+        return success(data=None, message="登出成功")
     except AuthError as e:
         return json_fail(message=e.message, code=e.code)

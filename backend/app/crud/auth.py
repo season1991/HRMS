@@ -42,6 +42,34 @@ def delete_captcha_by_id(redis: Redis, captcha_id: str) -> int:
     return int(redis.delete(_key(captcha_id)))
 
 
+# ============================= Redis: Token 黑名单 =============================
+
+
+def _blacklist_key(jti: str) -> str:
+    """构造黑名单 Redis 键"""
+    return f"blacklist:{jti}"
+
+
+def add_to_blacklist(
+    redis: Redis,
+    jti: str,
+    token_type: str,
+    user_id: int,
+    expire_seconds: int,
+) -> None:
+    """将 jti 加入黑名单
+
+    expire_seconds 通常等于"原 token 剩余有效时间"，让 Redis 自动清理过期条目，
+    避免黑名单无限增长。
+    """
+    redis.setex(_blacklist_key(jti), max(1, expire_seconds), token_type)
+
+
+def is_jti_blacklisted(redis: Redis, jti: str) -> bool:
+    """判断 jti 是否在黑名单中"""
+    return redis.exists(_blacklist_key(jti)) > 0
+
+
 # ============================= DB: 用户 =============================
 
 

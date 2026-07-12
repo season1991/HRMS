@@ -1,10 +1,11 @@
 """登录业务编排层
 
-Phase 6 范围：
+Phase 8 范围：
 - generate_captcha：生成图形验证码 + Base64 + 写入 Redis
 - login：完整登录流程（captcha → 用户 → 锁定 → 状态 → 密码 → 重置 → 双 Token）
+- logout：将当前 access token 的 jti 加入 Redis 黑名单
 
-后续 Phase 按 TC 补齐 logout / refresh / me。
+后续 Phase 按 TC 补齐 refresh / me。
 """
 
 import io
@@ -13,6 +14,8 @@ from base64 import b64encode
 from datetime import datetime, timedelta, timezone
 
 from captcha.image import ImageCaptcha
+from jose import JWTError
+from jose.exceptions import ExpiredSignatureError
 from redis import Redis
 from sqlalchemy.orm import Session
 
@@ -66,6 +69,20 @@ class UserLockedError(AuthError):
 
     def __init__(self, message: str = "账号已被锁定，请稍后再试"):
         super().__init__(message, code=403)
+
+
+class TokenInvalidError(AuthError):
+    """Token 无效或已过期"""
+
+    def __init__(self, message: str = "Token 无效或已过期"):
+        super().__init__(message, code=401)
+
+
+class TokenRevokedError(AuthError):
+    """Token 已被吊销"""
+
+    def __init__(self, message: str = "Token 已失效，请重新登录"):
+        super().__init__(message, code=401)
 
 
 # ============================= 工具 =============================
@@ -204,3 +221,36 @@ def login(
             "login_ip": user.login_ip,
         },
     }
+
+
+def logout(redis: Redis, token: str) -> None:
+    """登出：将当前 access token 的 jti 加入 Redis 黑名单
+
+    流程：
+        1. 解码 access token 拿到 jti / user_id / exp
+        2. 计算"剩余有效秒数"
+        3. SETEX blacklist:{jti} <剩余秒数> <token_type>，由 Redis TTL 自动清理
+    """
+    try:
+        payload = security.decode_jwt(token, expected_type="access")
+    except ExpiredSignatureError as e:
+        raise TokenInvalidError("Token 已过期") from e
+    except JWTError as e:
+        raise TokenInvalidError("Token 无效") from e
+
+    jti = payload.get("jti")
+    if not jti:
+        raise TokenInvalidError("Token 缺少 jti")
+    user_id = int(payload.get("sub", 0))
+
+    exp_ts = int(payload.get("exp", 0))
+    now_ts = int(datetime.now(timezone.utc).timestamp())
+    expire_seconds = max(1, exp_ts - now_ts)
+
+    crud_auth.add_to_blacklist(
+        redis=redis,
+        jti=jti,
+        token_type="access",
+        user_id=user_id,
+        expire_seconds=expire_seconds,
+    )

@@ -115,18 +115,21 @@
 
 ## Phase 8 · TC20~TC21 → GREEN（登出）
 
-- [ ] TC20 维持 **RED**
-- [ ] `backend/app/models/token_blacklist.py`：`TokenBlacklist` 表（jti / token_type / user_id / expired_at）
-- [ ] `backend/app/crud/auth.py`：`add_to_blacklist`、`is_jti_blacklisted`
-- [ ] `backend/app/api/auth.py`：从 `Authorization: Bearer <token>` 解析 token 的依赖工具
-- [ ] `backend/app/services/auth.py`：`logout(db, token)` —— 解码 access → jti 写入黑名单
-- [ ] `backend/app/api/auth.py`：`POST /api/auth/logout` 路由
-- [ ] TC20 → GREEN
-- [ ] TC21 维持 **RED**
-- [ ] `backend/app/services/auth.py`：解码失败时抛出 `TokenInvalidError`
-- [ ] `backend/app/api/auth.py`：将 `AuthError` 映射为 HTTP 状态码（400/401/403）+ `json_fail` 响应
-- [ ] TC21 → GREEN
-- [ ] 跑全套测试，确认 TC01~TC18 + TC20 + TC21 共 11 个 GREEN，其余 7 个仍 RED
+> **架构调整**：原 todo 计划用 DB 表 `TokenBlacklist`，本阶段改用 Redis 实现（与 captcha 一致）。
+> 黑名单是短期数据，用 `SETEX blacklist:{jti} <剩余秒数> <token_type>` 让 Redis TTL 自动清理，避免无限增长。
+
+- [✔] TC20 维持 **RED**
+- [✘] ~~`backend/app/models/token_blacklist.py`：建表~~ —— 改用 Redis，无需 DB 表
+- [✔] `backend/app/crud/auth.py`：`add_to_blacklist(redis, jti, token_type, user_id, expire_seconds)` / `is_jti_blacklisted(redis, jti)`
+- [✔] `backend/app/api/auth.py`：`_bearer_token(authorization)` 解析工具
+- [✔] `backend/app/services/auth.py`：`logout(redis, token)` —— 解码 access → jti 写入黑名单（TTL = 剩余有效秒数）
+- [✔] `backend/app/services/auth.py`：新增 `TokenInvalidError(401)` / `TokenRevokedError(401)`
+- [✔] `backend/app/api/auth.py`：`POST /api/auth/logout` 路由
+- [✔] TC20 → GREEN
+- [✔] TC21 维持 **RED**
+- [✔] `backend/app/services/auth.py`：解码失败时（ExpiredSignatureError / JWTError）抛 `TokenInvalidError`
+- [✔] TC21 → GREEN
+- [✔] 跑全套测试：**13 passed, 5 failed**（TC20/21 GREEN，其余 RED 不动）
 
 ## Phase 9 · TC30~TC32 → GREEN（刷新 Token）
 
