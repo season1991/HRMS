@@ -63,12 +63,19 @@
 
 ## Phase 5 · TC02 → GREEN（验证码过期）
 
-- [ ] TC02 维持 **RED**
-- [ ] `backend/app/core/config.py`：增加 `CAPTCHA_EXPIRE_MINUTES=5`
-- [ ] `backend/app/services/auth.py`：`generate_captcha` 写入 `expired_at = now + 5min`
-- [ ] `backend/app/crud/auth.py`：`delete_captcha_by_id`、`cleanup_expired_captchas`
-- [ ] TC02 转为 **GREEN**
-- [ ] 跑全套测试，确认 TC01 / TC02 通过，其余 16 个仍 RED
+> 注：因 Phase 4 已迁移到 Redis（SETEX TTL 自动过期替代 `expired_at` 字段），
+> 本阶段"配置/写入/删除"三项已实质完成。本阶段实际新增的是登录接口的 captcha 校验骨架。
+
+- [✔] TC02 维持 **RED**
+- [✔] `backend/app/core/config.py`：增加 `CAPTCHA_EXPIRE_MINUTES=5`（Phase 4 已加）
+- [✔] `backend/app/services/auth.py`：`generate_captcha` 通过 SETEX TTL 自动过期（Phase 4 已实现）
+- [✔] `backend/app/crud/auth.py`：`delete_captcha_by_id` 已实现；`cleanup_expired_captchas` 由 Redis TTL 替代，无需手动清理
+- [✔] `backend/app/schemas/auth.py`：增加 `LoginIn`（登录入参）
+- [✔] `backend/app/services/auth.py`：增加 `AuthError` / `CaptchaInvalidError` / `CaptchaMismatchError` + `login()` 骨架（仅校验 captcha，Phase 6+ 补全）
+- [✔] `backend/app/api/auth.py`：增加 `POST /api/auth/login` 路由
+- [✔] TC02 转为 **GREEN**
+- [✔] 跑全套测试：TC01 / TC02 GREEN，**附带 TC13 / TC14 / TC17 也 GREEN**（captcha 校验副作用 + stub 不做用户校验）
+  - 13 个 RED：TC10/11/12/15/16/18/20/21/30/31/32/40/41
 
 ## Phase 6 · TC10 → GREEN（登录成功 + 用户表 + JWT）
 

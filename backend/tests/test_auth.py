@@ -70,11 +70,11 @@ def client(session_factory, engine, redis_client):
 @pytest.fixture()
 def admin_user(session_factory):
     with session_factory() as db:
-        u = SysUser(username="admin", password=get_password_hash("admin123"), nickname="管理员", role_id=1, status=1, error_count=0)
+        u = SysUser(username="admin", password=get_password_hash("admin"), nickname="管理员", role_id=1, status=1, error_count=0)
         db.add(u)
         db.commit()
         db.refresh(u)
-        return {"id": u.id, "username": u.username, "password": "admin123"}
+        return {"id": u.id, "username": u.username, "password": "admin"}
 
 
 @pytest.fixture()
