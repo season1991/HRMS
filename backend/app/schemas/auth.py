@@ -46,3 +46,17 @@ class LoginOut(BaseModel):
     refresh_token: str = Field(..., description="刷新令牌，7 天有效")
     token_type: str = Field(default="bearer", description="Token 类型")
     user: UserOut = Field(..., description="当前登录用户信息")
+
+
+class RefreshIn(BaseModel):
+    """刷新 Token 请求参数"""
+
+    refresh_token: str = Field(..., description="用于刷新的 refresh_token")
+
+
+class RefreshOut(BaseModel):
+    """刷新 Token 响应"""
+
+    access_token: str = Field(..., description="新的访问令牌")
+    refresh_token: str = Field(..., description="新的刷新令牌（旧 refresh 已失效）")
+    token_type: str = Field(default="bearer", description="Token 类型")

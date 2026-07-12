@@ -133,18 +133,18 @@
 
 ## Phase 9 · TC30~TC32 → GREEN（刷新 Token）
 
-- [ ] TC30 维持 **RED**
-- [ ] `backend/app/schemas/auth.py`：`RefreshIn`、`RefreshOut`
-- [ ] `backend/app/services/auth.py`：`refresh_tokens(db, refresh_token)` —— 校验 → 颁发新双 Token → 旧 refresh 拉黑（旋转策略）
-- [ ] `backend/app/api/auth.py`：`POST /api/auth/refresh` 路由
-- [ ] TC30 → GREEN
-- [ ] TC31 维持 **RED**
-- [ ] 已有 `is_jti_blacklist`，确认刷新流程对已拉黑的 refresh 抛 `TokenRevokedError`（401）
-- [ ] TC31 → GREEN
-- [ ] TC32 维持 **RED**
-- [ ] `decode_jwt` 已处理 `ExpiredSignatureError`，服务层转 `TokenInvalidError`，API 层返回 401
-- [ ] TC32 → GREEN
-- [ ] 跑全套测试，确认 TC01~TC21 + TC30~TC32 共 14 个 GREEN，其余 4 个仍 RED
+- [✔] TC30 维持 **RED**
+- [✔] `backend/app/schemas/auth.py`：`RefreshIn` + `RefreshOut`
+- [✔] `backend/app/services/auth.py`：`refresh_tokens(db, redis, refresh_token)` —— 解码 → 黑名单检查 → 用户状态 → 旧 refresh 拉黑 → 新双 Token
+- [✔] `backend/app/api/auth.py`：`POST /api/auth/refresh` 路由
+- [✔] TC30 → GREEN
+- [✔] TC31 维持 **RED**
+- [✔] 复用 `is_jti_blacklist`：已拉黑的 refresh 抛 `TokenRevokedError(401)`
+- [✔] TC31 → GREEN
+- [✔] TC32 维持 **RED**
+- [✔] `decode_jwt` 处理 `ExpiredSignatureError`，服务层转 `TokenInvalidError`，API 层返回 401
+- [✔] TC32 → GREEN
+- [✔] 跑全套测试：**16 passed, 2 failed**（TC30/31/32 GREEN，剩余 RED：TC40/41）
 
 ## Phase 10 · TC40~TC41 → GREEN（当前用户）
 

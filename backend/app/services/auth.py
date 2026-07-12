@@ -254,3 +254,60 @@ def logout(redis: Redis, token: str) -> None:
         user_id=user_id,
         expire_seconds=expire_seconds,
     )
+
+
+def refresh_tokens(db: Session, redis: Redis, refresh_token: str) -> dict:
+    """刷新 Token：校验 refresh → 颁发新双 Token → 旧 refresh 拉黑
+
+    旋转策略（refresh token rotation）：
+        - 每次成功刷新后，旧 refresh_token 立即失效（写入黑名单）
+        - 下次再用旧 refresh_token 调用本接口会抛 TokenRevokedError(401)
+
+    流程：
+        1. 解码 refresh token（校验签名 + 类型 + 未过期）
+        2. 黑名单检查：若 jti 已在黑名单 → TokenRevokedError
+        3. 用户状态检查：用户不存在或被禁用 → TokenInvalidError
+        4. 旧 refresh 拉黑
+        5. 颁发新 access / refresh Token
+    """
+    try:
+        payload = security.decode_jwt(refresh_token, expected_type="refresh")
+    except ExpiredSignatureError as e:
+        raise TokenInvalidError("Refresh Token 已过期") from e
+    except JWTError as e:
+        raise TokenInvalidError("Refresh Token 无效") from e
+
+    jti = payload.get("jti")
+    if not jti:
+        raise TokenInvalidError("Refresh Token 缺少 jti")
+    user_id = int(payload.get("sub", 0))
+
+    # 黑名单检查（必须在解码通过后，否则无法判断 jti）
+    if crud_auth.is_jti_blacklisted(redis, jti):
+        raise TokenRevokedError("Refresh Token 已失效")
+
+    # 用户状态检查
+    user = crud_auth.get_user_by_id(db, user_id)
+    if user is None or user.status != 1:
+        raise TokenInvalidError("用户不存在或已被禁用")
+
+    # 旧 refresh 拉黑
+    exp_ts = int(payload.get("exp", 0))
+    now_ts = int(datetime.now(timezone.utc).timestamp())
+    expire_seconds = max(1, exp_ts - now_ts)
+    crud_auth.add_to_blacklist(
+        redis=redis,
+        jti=jti,
+        token_type="refresh",
+        user_id=user_id,
+        expire_seconds=expire_seconds,
+    )
+
+    # 颁发新双 Token
+    new_access_jti = uuid.uuid4().hex
+    new_refresh_jti = uuid.uuid4().hex
+    return {
+        "access_token": security.create_access_token(user_id, new_access_jti),
+        "refresh_token": security.create_refresh_token(user_id, new_refresh_jti),
+        "token_type": "bearer",
+    }

@@ -1,11 +1,12 @@
 """认证接口路由
 
-Phase 8：
+Phase 9：
 - GET  /api/auth/captcha
 - POST /api/auth/login
 - POST /api/auth/logout
+- POST /api/auth/refresh
 
-其他 2 个路由在后续 Phase 按 TC 补齐。
+剩余 1 个路由在后续 Phase 按 TC 补齐。
 """
 
 from fastapi import APIRouter, Depends, Header, Request
@@ -15,7 +16,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.redis_client import get_redis
 from app.core.response import json_fail, success
-from app.schemas.auth import CaptchaOut, LoginIn, LoginOut
+from app.schemas.auth import CaptchaOut, LoginIn, LoginOut, RefreshIn, RefreshOut
 from app.services import auth as auth_service
 from app.services.auth import AuthError
 
@@ -86,5 +87,21 @@ def logout(
         token = _bearer_token(authorization)
         auth_service.logout(redis=redis, token=token)
         return success(data=None, message="登出成功")
+    except AuthError as e:
+        return json_fail(message=e.message, code=e.code)
+
+
+@router.post("/refresh", summary="刷新 Token")
+def refresh(
+    payload: RefreshIn,
+    db: Session = Depends(get_db),
+    redis: Redis = Depends(get_redis),
+):
+    """校验 refresh_token，返回新双 Token；旧 refresh_token 立即失效（旋转策略）。"""
+    try:
+        data = auth_service.refresh_tokens(
+            db=db, redis=redis, refresh_token=payload.refresh_token
+        )
+        return success(RefreshOut(**data).model_dump())
     except AuthError as e:
         return json_fail(message=e.message, code=e.code)
