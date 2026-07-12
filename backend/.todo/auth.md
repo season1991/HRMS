@@ -41,13 +41,13 @@
 > 目标：搭好 FastAPI + SQLAlchemy 最小骨架，让 18 个用例可以被 pytest 收集并跑出 **RED**。
 > 此阶段不实现任何业务逻辑，所有用例应仍处于失败状态。
 
-- [ ] 创建 `backend/app/__init__.py`、`backend/tests/__init__.py`
-- [ ] `backend/app/core/config.py`：从环境变量读取配置（DATABASE_URL、JWT_SECRET、Token 有效期等），默认值即可
-- [ ] `backend/app/core/database.py`：SQLAlchemy 2.0 Base + engine + SessionLocal + `get_db` 依赖
-- [ ] `backend/app/core/response.py`：`{"code","message","data"}` 字典工厂（`success` / `fail` / `json_fail`）
-- [ ] `backend/app/main.py`：`create_app()` 工厂，挂载空路由，lifespan 建表，初始化默认 admin
-- [ ] `backend/app/api/__init__.py`：空包
-- [ ] 跑 `pytest backend/tests -v`，确认 18 用例全部仍为 **RED**（404 / 连接错误 / 断言失败均可）
+- [✔] 创建 `backend/app/__init__.py`、`backend/tests/__init__.py`
+- [✔] `backend/app/core/config.py`：从环境变量读取配置（DATABASE_URL、JWT_SECRET、Token 有效期等），默认值即可
+- [✔] `backend/app/core/database.py`：SQLAlchemy 2.0 Base + engine + SessionLocal + `get_db` 依赖
+- [✔] `backend/app/core/response.py`：`{"code","message","data"}` 字典工厂（`success` / `fail` / `json_fail`）
+- [✔] `backend/app/main.py`：`create_app()` 工厂，挂载空路由，lifespan 建表，初始化默认 admin
+- [✔] `backend/app/api/__init__.py`：空包
+- [✔] 跑 `pytest backend/tests -v`，确认 18 用例全部仍为 **RED**（404 / 连接错误 / 断言失败均可）
 
 ## Phase 4 · TC01 → GREEN（验证码接口）
 

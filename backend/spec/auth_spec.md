@@ -10,7 +10,7 @@
 
 | 文件路径 | 说明 |
 |----------|------|
-| backend/app/core/config.py | 配置文件 |
+| backend/app/core/config.py | 配置加载（pydantic-settings + YAML 自定义源） |
 | backend/app/core/security.py | 安全工具 |
 | backend/app/core/database.py | 数据库连接 |
 | backend/app/models/sys_user.py | 用户表模型 |
@@ -21,6 +21,10 @@
 | backend/app/services/auth.py | 登录业务逻辑 |
 | backend/app/api/auth.py | 认证接口 |
 | backend/app/main.py | 应用入口 |
+| backend/config/dev.yaml | 开发环境配置（默认 APP_ENV） |
+| backend/config/uat.yaml | UAT 环境配置 |
+| backend/config/prod.yaml | 生产环境配置 |
+| backend/.env | 运行时环境变量（APP_ENV 等） |
 | backend/tests/test_auth.py | 测试用例 |
 | backend/requirements.txt | 依赖 |
 
@@ -30,6 +34,27 @@
 |------|------|
 | sys_user | 用户表 |
 | sys_captcha | 验证码表 |
+
+
+## Configuration
+
+应用配置由 `app/core/config.py` 加载，**配置源优先级（高 → 低）**：
+
+1. `backend/.env` 文件
+2. `backend/config/{APP_ENV}.yaml` —— 按 `APP_ENV` 选择 dev / uat / prod
+3. 环境变量（os.environ）
+4. file secrets
+5. 类默认值（兜底）
+
+**APP_ENV 行为**：
+- 默认 `dev`，加载 `config/dev.yaml`（dev 也是单元测试环境）
+- `uat` → `config/uat.yaml`
+- `prod` → `config/prod.yaml`
+- 其他值或对应文件缺失 → 回退 `config/dev.yaml`
+
+**生产部署注意**：由于 `.env` > `YAML`，prod.yaml 中的空字段（如 `DATABASE_URL: ""` / `JWT_SECRET: ""`）会被部署平台的 `.env` 文件覆盖，因此必须把生产密钥写入 `.env` 文件而**不是**用环境变量注入。
+
+**禁止事项**：`Settings(DEBUG=True)` 这类初始化参数**不会生效**——避免代码中硬编码覆盖配置，必须通过配置源提供。
 
 
 ## API And Behavior
@@ -127,12 +152,11 @@
 2. 使用 bcrypt 进行密码加密
 3. 使用 python-jose 处理 JWT
 4. Refresh Token 黑名单存储在 Redis（若无Redis则用数据库表代替）
-5. 系统初始化时自动创建默认管理员账号（admin / admin）
-6. 统一响应格式：{"code": 200, "message": "success", "data": null}
-7. 使用 SQLAlchemy 2.0 语法
-8. 数据库使用 MySQL 8.0
-9. Access Token 有效期 2 小时
-10. Refresh Token 有效期 7 天
-11. 验证码有效期 5 分钟
-12. 最大登录错误次数 5 次
-13. 锁定时长 30 分钟
+5. 统一响应格式：{"code": 200, "message": "success", "data": null}
+6. 使用 SQLAlchemy 2.0 语法
+7. 数据库使用 MySQL 8.0
+8. Access Token 有效期 2 小时
+9. Refresh Token 有效期 7 天
+10. 验证码有效期 5 分钟
+11. 最大登录错误次数 5 次
+12. 锁定时长 30 分钟

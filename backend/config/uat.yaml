@@ -1,0 +1,22 @@
+# HRMS · UAT（用户验收测试）环境配置
+# 优先级：环境变量 > 本文件 > 代码默认值
+# 启动方式：APP_ENV=uat python -m app.main
+#
+# 与 dev 共用 MySQL 实例，但连接独立；数据库名同为 hrms。
+# DEBUG=false 以模拟生产行为，但 JWT_SECRET 仍允许占位（UAT 环境隔离可控）。
+
+APP_NAME: HRMS-UAT
+APP_ENV: uat
+DEBUG: false
+
+DATABASE_URL: "mysql+pymysql://root:uat_password@127.0.0.1:3306/hrms?charset=utf8mb4"
+DB_ECHO: false
+
+JWT_SECRET: uat-secret-change-me
+JWT_ALGORITHM: HS256
+ACCESS_TOKEN_EXPIRE_MINUTES: 120
+REFRESH_TOKEN_EXPIRE_MINUTES: 10080
+
+MAX_LOGIN_ERROR_COUNT: 5
+LOCK_MINUTES: 30
+CAPTCHA_EXPIRE_MINUTES: 5

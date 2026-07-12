@@ -1,24 +1,49 @@
-"""数据库连接管理（占位骨架）
+"""数据库连接管理
 
-仅提供测试文件 import 所需的符号：Base / engine / SessionLocal / get_db。
-真实实现（create_engine、Session 工厂、依赖注入）将在后续 Phase 补齐。
+封装 SQLAlchemy 2.0 风格的引擎、Session 工厂和 Base，并提供 FastAPI 依赖注入。
 """
 
 from typing import Generator
 
-from sqlalchemy.orm import DeclarativeBase, Session
+from sqlalchemy import create_engine
+from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
+
+from app.core.config import settings
+
+
+# SQLite 需要特殊 connect_args 以支持跨线程
+_connect_args: dict = {}
+if settings.DATABASE_URL.startswith("sqlite"):
+    _connect_args = {"check_same_thread": False}
+
+
+engine = create_engine(
+    settings.DATABASE_URL,
+    echo=settings.DB_ECHO,
+    connect_args=_connect_args,
+    pool_pre_ping=True,
+    future=True,
+)
+
+
+SessionLocal = sessionmaker(
+    bind=engine,
+    autoflush=False,
+    autocommit=False,
+    expire_on_commit=False,
+    class_=Session,
+)
 
 
 class Base(DeclarativeBase):
-    """SQLAlchemy 2.0 风格的声明基类。"""
-
+    """SQLAlchemy 2.0 风格的声明基类"""
     pass
 
 
-engine = None
-SessionLocal = None
-
-
 def get_db() -> Generator[Session, None, None]:
-    """FastAPI 依赖占位 —— 测试中通过 app.dependency_overrides[get_db] 覆盖真实实现。"""
-    raise RuntimeError("get_db 占位 stub 未被覆盖；测试应通过 dependency_overrides 注入 Session")
+    """FastAPI 依赖：每个请求创建一个 Session，请求结束自动关闭"""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

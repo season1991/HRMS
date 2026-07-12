@@ -22,11 +22,13 @@
 |------|------|
 | Python 3.11 | 编程语言 |
 | FastAPI | Web 框架 |
-| SQLAlchemy | ORM |
+| SQLAlchemy 2.0 | ORM |
 | MySQL 8.0 | 数据库 |
 | Redis | 缓存 |
 | JWT | 认证 |
 | Pydantic | 数据校验 |
+| pydantic-settings | 配置管理（多源加载） |
+| PyYAML | YAML 配置解析 |
 
 ## 3. 项目结构
 
@@ -51,9 +53,12 @@ hrms/
 │   │   ├── schemas/        # 数据模型
 │   │   ├── crud/           # 数据库操作
 │   │   ├── services/       # 业务逻辑
-│   │   └── core/           # 核心配置
+│   │   └── core/           # 核心配置（config / database / security / response）
+│   ├── config/             # 多环境配置（dev.yaml / uat.yaml / prod.yaml）
+│   ├── .env                # 运行时环境变量（APP_ENV 等，git ignore）
 │   ├── spec/               # 规格文档
 │   ├── tests/              # 测试代码
+│   ├── .todo/              # 开发任务清单
 │   └── requirements.txt
 │
 └── docs/                    # 项目文档

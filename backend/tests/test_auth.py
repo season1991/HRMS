@@ -2,9 +2,9 @@
 
 import os
 
-os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
-os.environ.setdefault("JWT_SECRET", "test-secret-key-for-unit-tests")
-os.environ.setdefault("BOOTSTRAP_DEFAULT_ADMIN", "0")
+# 单元测试采用 dev 环境：所有配置直接来自 config/dev.yaml
+# （SQLite 引擎由 engine fixture 注入到 app.core.database / app.main 模块，覆盖 dev.yaml 的 MySQL 配置）
+os.environ.setdefault("APP_ENV", "dev")
 
 import pytest
 from fastapi.testclient import TestClient

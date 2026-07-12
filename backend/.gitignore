@@ -41,7 +41,6 @@ htmlcov/
 .hypothesis/
 
 # Environment
-.env
 .env.local
 
 # Logs

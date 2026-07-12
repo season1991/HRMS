@@ -1,0 +1,22 @@
+# HRMS · 生产环境配置
+# 优先级：环境变量 > 本文件 > 代码默认值
+# 启动方式：APP_ENV=prod python -m app.main
+#
+# 数据库名固定为 hrms（与 dev/uat 同名，不同实例）。
+# 敏感字段（DATABASE_URL / JWT_SECRET）必须通过部署平台环境变量注入。
+
+APP_NAME: HRMS
+APP_ENV: prod
+DEBUG: false
+
+DATABASE_URL: ""
+DB_ECHO: false
+
+JWT_SECRET: ""
+JWT_ALGORITHM: HS256
+ACCESS_TOKEN_EXPIRE_MINUTES: 120
+REFRESH_TOKEN_EXPIRE_MINUTES: 10080
+
+MAX_LOGIN_ERROR_COUNT: 5
+LOCK_MINUTES: 30
+CAPTCHA_EXPIRE_MINUTES: 5
