@@ -170,13 +170,14 @@
 > 技术栈：Vue 3 + Element Plus + Pinia + Vue Router + Axios + Vite
 > 按 `openapi.json` 契约生成接口封装与页面
 
-- [ ] 创建 `frontend/` 目录（Vite + Vue 3 初始化）
-- [ ] 安装依赖：vue、vue-router、pinia、element-plus、axios、sass
-- [ ] `src/api/auth.ts`：根据 OpenAPI 生成 5 个接口的 TS 封装（captcha / login / logout / refresh / me）
-- [ ] `src/utils/request.ts`：Axios 实例 + 请求拦截器（注入 Bearer Token）+ 响应拦截器（401 跳转登录）
-- [ ] `src/stores/auth.ts`：Pinia 状态（access_token / refresh_token / userInfo）+ 持久化
-- [ ] `src/router/index.ts`：路由表 + 全局守卫（未登录拦截）
-- [ ] `src/views/Login.vue`：登录页（用户名/密码/图形验证码 + 切换验证码）
-- [ ] `src/views/Profile.vue` 或相关页面：调用 `/api/auth/me` 展示当前用户
-- [ ] `src/layout/AppHeader.vue`：登出按钮调用 `/api/auth/logout`
-- [ ] 本地启动 `npm run dev` 联调后端，验证登录 / 登出 / 刷新 / me 流程
+- [✔] 创建 `frontend/` 目录（Vite + Vue 3 初始化，配置 vite.config.ts 代理 `/api` → 后端 8000）
+- [✔] 安装依赖：vue / vue-router / pinia / element-plus / axios / sass + vite + typescript（110 个包）
+- [✔] `src/api/auth.ts`：5 个接口 TS 封装（CaptchaData / LoginIn / LoginOut / RefreshIn / RefreshOut / UserInfo）
+- [✔] `src/utils/request.ts`：Axios 实例 + 请求拦截器（注入 Bearer Token）+ 响应拦截器（业务码 401 触发 refresh_token 静默刷新 + 重放原请求）
+- [✔] `src/stores/auth.ts`：Pinia 状态（accessToken / refreshToken / userInfo）+ localStorage 持久化（key: `hrms-auth`）
+- [✔] `src/router/index.ts`：路由表（/、/login、/health）+ 全局守卫（未登录拦截 / 已登录防重入）
+- [✔] `src/views/Login.vue`：用户名/密码/图形验证码（点击图片刷新）+ 错误提示 + loading 态
+- [✔] `src/views/Profile.vue`：调用 `/api/auth/me` 展示当前用户（el-descriptions 表格）
+- [✔] `src/views/Health.vue`：调用 `/health` 健康检查
+- [✔] `src/layout/AppHeader.vue`：登出按钮调用 `/api/auth/logout` + 清空 store + 跳登录
+- [✔] 本地启动联调：fakeredis TCP + uvicorn + vite，captcha 接口返回 200 完整 base64 PNG ✅
