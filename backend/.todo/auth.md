@@ -103,8 +103,11 @@
 - [✔] TC11 → GREEN：用户名校验失败时返回 401（用户名不存在）—— **Phase 6 已 GREEN**
 - [✔] TC12 → GREEN：密码错误时返回 401，且不影响 TC10 —— **Phase 6 已 GREEN**
 - [✔] TC13 → GREEN：验证码答案错误时返回 400 —— **Phase 5 已 GREEN**
-- [ ] TC14 → GREEN：验证码被消费/不存在时返回 400
-- [ ] TC15 → GREEN：账号被禁用（status=0）时返回 403
+- [✔] TC14 → GREEN：验证码被消费/不存在时返回 400 —— **Phase 6 已 GREEN**
+- [✔] TC15 → GREEN：账号被禁用（status=0）时返回 403 —— **Phase 6 已 GREEN**
+- [✔] TC16 → GREEN：账号被锁定（locked_until 未来）时返回 403 —— **Phase 6 已 GREEN**
+- [✔] TC17 → GREEN：locked_until 已过期时允许正常登录 —— **Phase 5 已 GREEN（副作用）**
+- [✔] TC18 → GREEN：登录成功后 `error_count` 重置为 0 —— **Phase 6 已 GREEN**
 - [ ] TC16 → GREEN：账号被锁定（locked_until 未来）时返回 403
 - [ ] TC17 → GREEN：locked_until 已过期时允许正常登录
 - [ ] TC18 → GREEN：登录成功后 `error_count` 重置为 0
