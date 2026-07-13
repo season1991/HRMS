@@ -38,6 +38,14 @@
         :closable="false"
         show-icon
       />
+      <el-alert
+        v-if="captchaError"
+        :title="captchaError"
+        type="warning"
+        :closable="false"
+        show-icon
+        style="margin-top: 8px"
+      />
     </el-card>
   </div>
 </template>
@@ -63,16 +71,17 @@ const form = reactive({
 const captchaImage = ref('')
 const loading = ref(false)
 const errorMsg = ref('')
+const captchaError = ref('')
 
 async function refreshCaptcha(): Promise<void> {
-  errorMsg.value = ''
+  captchaError.value = ''
   try {
     const data: CaptchaData = await getCaptcha()
     form.captcha_id = data.captcha_id
     form.captcha_code = ''
     captchaImage.value = data.captcha_image
   } catch (e: any) {
-    errorMsg.value = `验证码加载失败：${e.message}`
+    captchaError.value = `验证码加载失败：${e.message}`
   }
 }
 

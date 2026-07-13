@@ -47,12 +47,27 @@ http.interceptors.response.use(
     if (error.response?.status === 401) {
       return handleUnauthorized(error.response)
     }
-    return Promise.reject(error)
+    // 其他 HTTP 错误：把后端业务 message 提取出来，让上层能展示具体原因
+    const body = error.response?.data
+    const msg = body?.message || error.message || '请求失败'
+    return Promise.reject(new Error(msg))
   }
 )
 
 async function handleUnauthorized(response: any): Promise<any> {
   const auth = useAuthStore()
+
+  // 登录 / 刷新 token / 获取验证码 接口本身返回的 401 不该走刷新流程
+  // （比如"用户名或密码错误"就是登录接口的业务 401）
+  const url = response.config?.url || ''
+  if (
+    url.includes('/api/auth/login') ||
+    url.includes('/api/auth/refresh') ||
+    url.includes('/api/auth/captcha')
+  ) {
+    const msg = response.data?.message || '认证失败'
+    return Promise.reject(new Error(msg))
+  }
 
   // 没有 refresh_token，直接跳登录
   if (!auth.refreshToken) {
