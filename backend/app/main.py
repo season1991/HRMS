@@ -15,7 +15,11 @@ from fastapi import FastAPI, Request
 from app.api.auth import router as auth_router
 from app.core.config import settings
 from app.core.database import Base, SessionLocal, engine
+from app.core.logging_config import LOGGING_CONFIG, get_logger
 from app.core.response import json_fail
+
+
+logger = get_logger(__name__)
 
 
 @asynccontextmanager
@@ -45,6 +49,7 @@ def create_app() -> FastAPI:
     # 全局兜底异常处理
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(request: Request, exc: Exception):
+        logger.exception("未处理的请求异常: %s %s", request.method, request.url.path)
         return json_fail(message=f"服务器内部错误: {exc}", code=500)
 
     # 注册路由
@@ -65,4 +70,5 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=8000,
         reload=settings.DEBUG,
+        log_config=LOGGING_CONFIG,
     )
