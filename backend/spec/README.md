@@ -56,6 +56,7 @@ hrms/
 │   │   └── core/           # 核心配置（config / database / security / response）
 │   ├── config/             # 多环境配置（dev.yaml / uat.yaml / prod.yaml）
 │   ├── .env                # 运行时环境变量（APP_ENV 等，git ignore）
+│   ├── openapi/            # 自动生成的 OpenAPI 接口契约
 │   ├── spec/               # 规格文档
 │   ├── tests/              # 测试代码
 │   ├── .todo/              # 开发任务清单
@@ -74,13 +75,14 @@ hrms/
 2. **生成 Todo List 计划**：根据 spec 讨论结果，将开发任务分解为具体的 todo list，保存到 `.todo/` 目录（如 `.todo/模块名.md`），包含任务项和状态标记
 3. **测试驱动（全红）**：先写测试用例，运行后全部失败
 4. **测试驱动后端开发（全绿）**：根据测试用例驱动开发后端代码，直到测试全部通过
-5. **生成 OpenAPI**：自动生成接口文档
+5. **生成 OpenAPI**：自动生成接口契约并保存到 `backend/openapi/`
 6. **按契约生成前端页面**：根据 OpenAPI 文档生成前端接口调用代码和页面
 7. **更新 Todo List**：每完成一个任务项后，标记其状态为已完成（[✔]）
 
 | 阶段 | 产出物 | 存放位置 |
 |------|--------|----------|
 | 需求确认 | 规格文档 | backend/spec/ |
+| 接口契约 | OpenAPI 文档 | backend/openapi/ |
 | 测试验证 | 测试用例 | backend/tests/ |
 | 功能实现 | 代码 | backend/app/ |
 | 开发计划 | Todo List | backend/.todo/ |

@@ -161,7 +161,7 @@
 
 - [✔] 跑 `pytest backend/tests -v`，确认 18/18 通过
 - [✔] 启动服务验证 `/docs` Swagger UI 正常（通过 TestClient 验证 `/docs` → 200 返回 Swagger HTML，`/openapi.json` → 200 返回 OpenAPI 3.1.0 规范）
-- [✔] 导出 `backend/spec/openapi_auth.json` 供前端消费（9082 bytes，含 5 个 auth 路由 + 2 个健康检查）
+- [✔] 导出 `backend/openapi/openapi_auth.json` 供前端消费（9082 bytes，含 5 个 auth 路由 + 2 个健康检查）
 
 > 验证方式：本地有 MySQL 可直接 `& "D:\anaconda3\envs\dev_env\python.exe" -m uvicorn app.main:app`；或用 TestClient 跳过 uvicorn 直接调 `app.openapi()` 导出。
 
